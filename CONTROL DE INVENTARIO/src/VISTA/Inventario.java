@@ -4,15 +4,31 @@
  */
 package VISTA;
 
+import MODELO.Conexion;
+import VISTA.MenuPrincipal;
+import java.awt.Component;
 import java.awt.Image;
+import java.awt.event.KeyEvent;
+import java.sql.Connection;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import java.sql.CallableStatement;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Date;
+import java.sql.ResultSet;
+import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
 
 /**
- *
+ * Esta clase crea la ventana de inventario que permitira ingresar articulos al kardex
  * @author Gilson Efren Cruz Yagual
+ * 02/11/2023
  */
 public class Inventario extends javax.swing.JFrame {
 
@@ -21,17 +37,111 @@ public class Inventario extends javax.swing.JFrame {
    private ImageIcon imagenLupa;
    private Icon iconoLupa;
     
+    /**
+     *Constructor de form inventario
+     */
     public Inventario() {
         initComponents();
         this.setLocationRelativeTo(this);
-        this.ajustarImagen(lblLogoEcuaStock,"src/main/java/picture/logoEcuastock.png");
-        this.ajustarImagenBtn(btnBuscarActualizar, "src/main/java/picture/lupa.png");
+        this.ajustarImagen(lblLogoEcuaStock,"src/imagenes/logoEcuastock.png");
+        this.ajustarImagenBtn(btnBuscarActualizar, "src/imagenes/lupa.png");
         
-        
-//        jdcFechaIngresoRegistros.setMinSelectableDate(new date());
-//        jdcFechaIngresoRegistros.setMaxSelectableDate(new date());
+       
     }
+    public void llenarLblNombreUsuario(){
+        
+        
+        
+    }
+     /**
+    * Esta pequeña funcion ajusta nuestro logo al tamaño de la etiqueta
+    * @param lbl Etiqueta donde se ajustara la imagen
+    * @param ruta ruta recieb ala ruta de la cual se obtendra el logo en png
+    */
+   public void ajustarImagen(JLabel lbl,String ruta )
+    {
+        this.imagen= new ImageIcon(ruta);
+        this.icono = new ImageIcon(this.imagen.getImage().getScaledInstance(
+                lbl.getWidth(),
+                lbl.getHeight(),
+                Image.SCALE_DEFAULT)
+        );
+        lbl.setIcon(this.icono);
+        this.repaint();
+    }
+   
+   private void ajustarImagenBtn(JButton btn,String ruta )
+    {
+        this.imagenLupa= new ImageIcon(ruta);
+        this.iconoLupa = new ImageIcon(this.imagenLupa.getImage().getScaledInstance(
+                btn.getWidth(),
+                btn.getHeight(),
+                Image.SCALE_DEFAULT)
+        );
+        btn.setIcon(this.iconoLupa);
+        this.repaint();
+    }
+   
+   private void ajustarAnchoColumna(JTable table) {
+    //Se obtiene el modelo de la columna
+    TableColumnModel columnModel = table.getColumnModel();
+    //Se obtiene el total de las columnas
+    for (int column = 0; column < table.getColumnCount(); column++) {
+        //Establecemos un valor minimo para el ancho de la columna
+        int width = 95; //Min Width
+        //Obtenemos el numero de filas de la tabla
+        for (int row = 0; row < table.getRowCount(); row++) {
+            //Obtenemos el renderizador de la tabla
+            TableCellRenderer renderer = table.getCellRenderer(row, column);
+            //Creamos un objeto para preparar el renderer
+            Component comp = table.prepareRenderer(renderer, row, column);
+            //Establecemos el width segun el valor maximo del ancho de la columna
+            width = Math.max(comp.getPreferredSize().width + 1, width);
 
+        }
+        //Se establece una condicion para no sobrepasar el valor de 300
+        //Esto es Opcional
+        if (width > 300) {
+            width = 300;
+            }
+        //Se establece el ancho de la columna
+        columnModel.getColumn(column).setPreferredWidth(width);
+        }
+   }
+  
+    public static DefaultTableModel modeloTablaConsulta(ResultSet rs)throws SQLException
+               
+        {
+             DefaultTableModel model = new DefaultTableModel();
+
+                // Agregar las columnas al modelo.
+                model.addColumn("FECHA INGRESO");
+                model.addColumn("FECHA SALIDA");   
+                model.addColumn("EAN");
+                model.addColumn("CODIGO");
+                model.addColumn("DESCRIPCION");   
+                model.addColumn("VALOR");
+                model.addColumn("CANTIDAD");
+                model.addColumn("DISPONIBLE");   
+                
+                    // Agregar las filas al modelo.
+                        while (rs.next  ()) {
+                        Object[] row = new Object[8];
+                        row[0] = rs.getString("FECHA_INGRESO");
+                        row[1] = rs.getString("FECHA_SALIDA");
+                        row[2] = rs.getString("EAN");
+                        row[3] = rs.getString("ID_JUGUETES");
+                        row[4] = rs.getString("NOMBRE");
+                        row[5] = rs.getString("VALOR");
+                        row[6] = rs.getString("CANTIDAD");
+                        row[7] = rs.getString("DISPONIBLE");
+                        
+                        model.addRow(row);
+                }
+            return model;
+        }
+    
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -47,7 +157,7 @@ public class Inventario extends javax.swing.JFrame {
         btnConsultar = new javax.swing.JButton();
         btnIngresar = new javax.swing.JButton();
         btnActualizar = new javax.swing.JButton();
-        btnActualizar1 = new javax.swing.JButton();
+        btnRegresar = new javax.swing.JButton();
         pnlDatos = new javax.swing.JPanel();
         lblNombreSucursal = new javax.swing.JLabel();
         jtpInventario = new javax.swing.JTabbedPane();
@@ -59,14 +169,12 @@ public class Inventario extends javax.swing.JFrame {
         jtConsultar = new javax.swing.JTable();
         txtCodigoConsulta = new javax.swing.JTextField();
         lblEanConsultar = new javax.swing.JLabel();
-        tctEanConsulta = new javax.swing.JTextField();
-        lblDescripcionConsultar = new javax.swing.JLabel();
-        txtDescripcionConsultar = new javax.swing.JTextField();
+        txtEanConsulta = new javax.swing.JTextField();
         lblFechaInicioConsultar = new javax.swing.JLabel();
         lblFechaFinConsultar = new javax.swing.JLabel();
-        jcbBuscarPorConsultar = new javax.swing.JComboBox<>();
-        lblBuscarPorConsultar = new javax.swing.JLabel();
         lblModuloConsultar = new javax.swing.JLabel();
+        jdtFechaInicioConsultar = new com.toedter.calendar.JDateChooser();
+        jdtFechaFinConsultar = new com.toedter.calendar.JDateChooser();
         pnlRegistros = new javax.swing.JPanel();
         lblCodigoRegistros = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
@@ -88,7 +196,6 @@ public class Inventario extends javax.swing.JFrame {
         lblCodigoActualizar = new javax.swing.JLabel();
         lblDescripcionActualizar = new javax.swing.JLabel();
         lblEanActualizar = new javax.swing.JLabel();
-        lblCategoriaActualizar = new javax.swing.JLabel();
         lblCantidadActualActualizar = new javax.swing.JLabel();
         lblCantidadReconteoActualizar = new javax.swing.JLabel();
         btnGuardarActualizar = new javax.swing.JButton();
@@ -97,10 +204,9 @@ public class Inventario extends javax.swing.JFrame {
         btnBuscarActualizar = new javax.swing.JButton();
         btnModificarActualizar = new javax.swing.JButton();
         btnCancelarActualizar = new javax.swing.JButton();
-        txtCodigoActualizar = new javax.swing.JTextField();
-        txtCodigoActualizar1 = new javax.swing.JTextField();
+        txtEanActualizar = new javax.swing.JTextField();
         txtCodigoActualizar2 = new javax.swing.JTextField();
-        txtCodigoActualizar3 = new javax.swing.JTextField();
+        txtDescripcionActualizar = new javax.swing.JTextField();
         txtCodigoActualizar4 = new javax.swing.JTextField();
         txtCodigoActualizar5 = new javax.swing.JTextField();
         lblModuloRegistros1 = new javax.swing.JLabel();
@@ -138,10 +244,10 @@ public class Inventario extends javax.swing.JFrame {
             }
         });
 
-        btnActualizar1.setText("REGRESAR");
-        btnActualizar1.addActionListener(new java.awt.event.ActionListener() {
+        btnRegresar.setText("REGRESAR");
+        btnRegresar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnActualizar1ActionPerformed(evt);
+                btnRegresarActionPerformed(evt);
             }
         });
 
@@ -152,7 +258,7 @@ public class Inventario extends javax.swing.JFrame {
             .addComponent(btnConsultar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(pnlBotonesLayout.createSequentialGroup()
                 .addGap(17, 17, 17)
-                .addComponent(btnActualizar1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnRegresar, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(13, Short.MAX_VALUE))
             .addComponent(btnIngresar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(btnActualizar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -167,7 +273,7 @@ public class Inventario extends javax.swing.JFrame {
                 .addGap(46, 46, 46)
                 .addComponent(btnActualizar)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 278, Short.MAX_VALUE)
-                .addComponent(btnActualizar1, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnRegresar, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(26, 26, 26))
         );
 
@@ -206,19 +312,24 @@ public class Inventario extends javax.swing.JFrame {
         });
 
         btnCancelarConsultar.setText("Cancelar");
+        btnCancelarConsultar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCancelarConsultarActionPerformed(evt);
+            }
+        });
 
         lblCodigoConsultar.setText("Codigo");
 
-        jtConsultar.setForeground(new java.awt.Color(0, 255, 255));
+        jtConsultar.setForeground(new java.awt.Color(0, 0, 0));
         jtConsultar.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null}
+                {null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null}
             },
             new String [] {
-                "FECHA INGRESO", "FECHA SALIDA", "EAN", "CODIGO", "DESCRIPCION", "CATEGORIA"
+                "FECHA INGRESO", "FECHA SALIDA", "EAN", "CODIGO", "DESCRIPCION", "VALOR ", "CANTIDAD", "DISPONIBLE"
             }
         ));
         jScrollPane1.setViewportView(jtConsultar);
@@ -227,23 +338,20 @@ public class Inventario extends javax.swing.JFrame {
             jtConsultar.getColumnModel().getColumn(1).setPreferredWidth(10);
             jtConsultar.getColumnModel().getColumn(2).setPreferredWidth(40);
             jtConsultar.getColumnModel().getColumn(3).setPreferredWidth(60);
-            jtConsultar.getColumnModel().getColumn(4).setPreferredWidth(150);
-            jtConsultar.getColumnModel().getColumn(5).setPreferredWidth(40);
+            jtConsultar.getColumnModel().getColumn(4).setPreferredWidth(200);
         }
 
-        lblEanConsultar.setText("Ean");
-
-        tctEanConsulta.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tctEanConsultaActionPerformed(evt);
+        txtCodigoConsulta.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                txtCodigoConsultaKeyPressed(evt);
             }
         });
 
-        lblDescripcionConsultar.setText("Descripcion");
+        lblEanConsultar.setText("Ean");
 
-        txtDescripcionConsultar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtDescripcionConsultarActionPerformed(evt);
+        txtEanConsulta.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                txtEanConsultaKeyPressed(evt);
             }
         });
 
@@ -251,16 +359,11 @@ public class Inventario extends javax.swing.JFrame {
 
         lblFechaFinConsultar.setText("Fecha Fin");
 
-        jcbBuscarPorConsultar.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Seleccione", "Producto", "Categoria", "Fecha", " " }));
-        jcbBuscarPorConsultar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jcbBuscarPorConsultarActionPerformed(evt);
-            }
-        });
-
-        lblBuscarPorConsultar.setText("Buscar por");
-
         lblModuloConsultar.setText("MODULO CONSULTAR");
+
+        jdtFechaInicioConsultar.setBackground(new java.awt.Color(51, 153, 255));
+
+        jdtFechaFinConsultar.setBackground(new java.awt.Color(0, 153, 255));
 
         javax.swing.GroupLayout pnlConsultarLayout = new javax.swing.GroupLayout(pnlConsultar);
         pnlConsultar.setLayout(pnlConsultarLayout);
@@ -276,57 +379,56 @@ public class Inventario extends javax.swing.JFrame {
                         .addComponent(lblModuloConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(pnlConsultarLayout.createSequentialGroup()
-                        .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(pnlConsultarLayout.createSequentialGroup()
                                 .addComponent(lblCodigoConsultar)
                                 .addGap(8, 8, 8)
-                                .addComponent(txtCodigoConsulta, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(36, 36, 36)
-                                .addComponent(lblDescripcionConsultar))
+                                .addComponent(txtCodigoConsulta, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(pnlConsultarLayout.createSequentialGroup()
                                 .addComponent(lblEanConsultar)
                                 .addGap(18, 18, 18)
-                                .addComponent(tctEanConsulta, javax.swing.GroupLayout.PREFERRED_SIZE, 107, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(lblFechaInicioConsultar)))
-                        .addGap(18, 18, 18)
-                        .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(lblFechaFinConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(pnlConsultarLayout.createSequentialGroup()
-                                .addComponent(txtDescripcionConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(lblBuscarPorConsultar)))
-                        .addGap(41, 41, 41)
-                        .addComponent(jcbBuscarPorConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 152, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+                                .addComponent(txtEanConsulta, javax.swing.GroupLayout.PREFERRED_SIZE, 107, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(102, 102, 102)
+                        .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lblFechaInicioConsultar)
+                            .addComponent(lblFechaFinConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(70, 70, 70)
+                        .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jdtFechaFinConsultar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jdtFechaInicioConsultar, javax.swing.GroupLayout.DEFAULT_SIZE, 174, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 160, Short.MAX_VALUE)
                         .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlConsultarLayout.createSequentialGroup()
-                                .addComponent(btnCancelarConsultar)
-                                .addContainerGap())
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlConsultarLayout.createSequentialGroup()
                                 .addComponent(btnOkConsultar)
-                                .addGap(23, 23, 23))))))
+                                .addGap(23, 23, 23))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlConsultarLayout.createSequentialGroup()
+                                .addComponent(btnCancelarConsultar)
+                                .addContainerGap())))))
         );
         pnlConsultarLayout.setVerticalGroup(
             pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pnlConsultarLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblCodigoConsultar)
-                    .addComponent(txtCodigoConsulta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnOkConsultar)
-                    .addComponent(lblDescripcionConsultar)
-                    .addComponent(txtDescripcionConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jcbBuscarPorConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblBuscarPorConsultar))
-                .addGap(17, 17, 17)
                 .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(tctEanConsulta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(lblFechaInicioConsultar)
-                        .addComponent(lblEanConsultar))
-                    .addComponent(lblFechaFinConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnCancelarConsultar))
+                    .addGroup(pnlConsultarLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(lblCodigoConsultar)
+                                .addComponent(txtCodigoConsulta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btnOkConsultar)
+                                .addComponent(lblFechaInicioConsultar))
+                            .addComponent(jdtFechaInicioConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jdtFechaFinConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(lblFechaFinConsultar, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(pnlConsultarLayout.createSequentialGroup()
+                        .addGap(55, 55, 55)
+                        .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(btnCancelarConsultar)
+                            .addGroup(pnlConsultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(txtEanConsulta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(lblEanConsultar)))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 290, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -483,8 +585,6 @@ public class Inventario extends javax.swing.JFrame {
 
         lblEanActualizar.setText("Ean");
 
-        lblCategoriaActualizar.setText("Categoria");
-
         lblCantidadActualActualizar.setText("Cantidad Actual");
 
         lblCantidadReconteoActualizar.setText("Cantidad Reconteo");
@@ -539,7 +639,15 @@ public class Inventario extends javax.swing.JFrame {
             }
         });
 
-        txtCodigoActualizar1.setEditable(false);
+        txtEanActualizar.setEditable(false);
+
+        txtCodigoActualizar2.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                txtCodigoActualizar2KeyPressed(evt);
+            }
+        });
+
+        txtDescripcionActualizar.setEditable(false);
 
         txtCodigoActualizar5.setEditable(false);
 
@@ -558,26 +666,23 @@ public class Inventario extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(pnlActualizarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(pnlActualizarLayout.createSequentialGroup()
-                        .addGroup(pnlActualizarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(pnlActualizarLayout.createSequentialGroup()
-                                .addComponent(lblEanActualizar)
-                                .addGap(24, 24, 24)
-                                .addComponent(txtCodigoActualizar))
+                        .addGroup(pnlActualizarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(pnlActualizarLayout.createSequentialGroup()
                                 .addComponent(lblCodigoActualizar)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtCodigoActualizar2, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(18, 20, Short.MAX_VALUE)
-                        .addComponent(lblDescripcionActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+                                .addComponent(txtCodigoActualizar2, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 20, Short.MAX_VALUE)
+                                .addComponent(lblDescripcionActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE))
+                            .addGroup(pnlActualizarLayout.createSequentialGroup()
+                                .addComponent(lblEanActualizar)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(txtEanActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                         .addGroup(pnlActualizarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(pnlActualizarLayout.createSequentialGroup()
-                                .addComponent(txtCodigoActualizar3, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(40, 40, 40)
-                                .addComponent(lblCategoriaActualizar)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtCodigoActualizar1, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
+                                .addComponent(txtDescripcionActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 232, Short.MAX_VALUE)
                                 .addComponent(btnBuscarActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
                                 .addComponent(btnModificarActualizar)
@@ -617,12 +722,10 @@ public class Inventario extends javax.swing.JFrame {
                     .addComponent(btnBuscarActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(pnlActualizarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(lblCodigoActualizar)
-                        .addComponent(lblCategoriaActualizar)
                         .addComponent(lblDescripcionActualizar)
                         .addComponent(btnModificarActualizar)
-                        .addComponent(txtCodigoActualizar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addComponent(txtCodigoActualizar2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(txtCodigoActualizar3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(txtDescripcionActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(18, 18, 18)
                 .addGroup(pnlActualizarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblEanActualizar)
@@ -630,7 +733,7 @@ public class Inventario extends javax.swing.JFrame {
                     .addComponent(lblCantidadReconteoActualizar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(btnGuardarActualizar)
                     .addComponent(btnCancelarActualizar)
-                    .addComponent(txtCodigoActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txtEanActualizar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtCodigoActualizar4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtCodigoActualizar5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
@@ -676,78 +779,73 @@ public class Inventario extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-    
-//    public static void main(String args[]) {
-//        /* Set the Nimbus look and feel */
-//        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-//        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-//         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-//         */
-//        try {
-//            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-//                if ("Nimbus".equals(info.getName())) {
-//                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-//                    break;
-//                }
-//            }
-//        } catch (ClassNotFoundException ex) {
-//            java.util.logging.Logger.getLogger(Inventario.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        } catch (InstantiationException ex) {
-//            java.util.logging.Logger.getLogger(Inventario.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        } catch (IllegalAccessException ex) {
-//            java.util.logging.Logger.getLogger(Inventario.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-//            java.util.logging.Logger.getLogger(Inventario.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-//        }
-//        //</editor-fold>
-//
-//        /* Create and display the form */
-//        /*java.awt.EventQueue.invokeLater(new Runnable() {
-//            public void run() {
-//                 new MenuPrincipal().setVisible(true);
-//            }
-//        //</editor-fold>
-//
-//        /* Create and display the form */
-//        /*java.awt.EventQueue.invokeLater(new Runnable() {
-//            public void run() {
-//                 new MenuPrincipal().setVisible(true);
-//            }
-//        //</editor-fold>
-//
-//        /* Create and display the form */
-//        /*java.awt.EventQueue.invokeLater(new Runnable() {
-//            public void run() {
-//                 new MenuPrincipal().setVisible(true);
-//            }
-//        //</editor-fold>
-//
-//        /* Create and display the form */
-//        /*java.awt.EventQueue.invokeLater(new Runnable() {
-//            public void run() {
-//                 new MenuPrincipal().setVisible(true);
-//            }
-//        });*/
-//    }
+
     private void btnActualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnActualizarActionPerformed
         jtpInventario.setSelectedIndex(2);
     }//GEN-LAST:event_btnActualizarActionPerformed
 
-    private void txtDescripcionConsultarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtDescripcionConsultarActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtDescripcionConsultarActionPerformed
-
-    private void tctEanConsultaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tctEanConsultaActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_tctEanConsultaActionPerformed
-
     private void btnOkConsultarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOkConsultarActionPerformed
-        // TODO add your handling code here:
+        if (!txtCodigoConsulta.getText().isEmpty()) { //verdadero si esta lleno
+           //ejecutar sp codigo
+           
+                  try{
+                 Connection con = Conexion.getConexion();
+                 CallableStatement sp = con.prepareCall("{call CONSULTAR_STOCK_CODIGO(?)}");
+                 sp.setString(1,txtCodigoConsulta.getText());
+                    ResultSet rsCodigo = sp.executeQuery();
+                    jtConsultar.setModel(modeloTablaConsulta(rsCodigo));
+                    ajustarAnchoColumna (jtConsultar);
+                    jtConsultar.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                 sp.close(); 
+                 con.close();
+                    } catch (SQLException e){
+                     JOptionPane.showMessageDialog(null,"error de consulta"+e.toString());
+                        }
+                  
+        } else if (!txtEanConsulta.getText().isEmpty()) {//verdadero si esta lleno
+            
+            //ejecutar sp ean
+            
+                  try{
+                 Connection con = Conexion.getConexion();
+                 CallableStatement sp = con.prepareCall("{call CONSULTAR_STOCK_EAN(?)}");
+                 sp.setString(1,txtEanConsulta.getText());
+                    ResultSet rsEan = sp.executeQuery();
+                    jtConsultar.setModel(modeloTablaConsulta(rsEan));
+                    ajustarAnchoColumna (jtConsultar);
+                    jtConsultar.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                 sp.close(); 
+                 con.close();
+                    } catch (SQLException e){
+                     JOptionPane.showMessageDialog(null,"error de consulta"+e.toString());
+                        }
+                  
+                
+        } else if (jdtFechaInicioConsultar.getDate() != null) {
+            //EJECUTA CONSULTAR_STOCK_FECHA
+                java.util.Date fechaInicioUtil = jdtFechaInicioConsultar.getDate();
+                Date n_FECHA_INGRESO = new java.sql.Date(fechaInicioUtil.getTime());
+                java.util.Date fechaFinUtil = jdtFechaFinConsultar.getDate();
+                Date n_FECHA_SALIDA = new java.sql.Date(fechaFinUtil.getTime());  
+            try{
+                 Connection con = Conexion.getConexion();
+                 CallableStatement sp = con.prepareCall("{call CONSULTAR_STOCK_FECHA( ?,?)}");
+                 sp.setDate(1,n_FECHA_INGRESO);
+                 sp.setDate(2,n_FECHA_SALIDA);
+                    ResultSet rs = sp.executeQuery();
+                    jtConsultar.setModel(modeloTablaConsulta(rs));
+                    ajustarAnchoColumna (jtConsultar);
+                    jtConsultar.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                 sp.close(); 
+                 con.close();
+            } catch (SQLException e){
+                JOptionPane.showMessageDialog(null,"error de consulta"+e.toString());
+            }   
+        } else {
+            JOptionPane.showMessageDialog(null,"LOS CAMPOS ESTAN VACIOS \n POR FAVOR INDIQUE CRITERIO DE BUSQUEDA");
+        }
+           
     }//GEN-LAST:event_btnOkConsultarActionPerformed
-
-    private void jcbBuscarPorConsultarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcbBuscarPorConsultarActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jcbBuscarPorConsultarActionPerformed
 
     private void btnOkRegistrosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOkRegistrosActionPerformed
         // TODO add your handling code here:
@@ -776,7 +874,11 @@ public class Inventario extends javax.swing.JFrame {
     private void btnCancelarActualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActualizarActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_btnCancelarActualizarActionPerformed
-
+    /**
+     * Este evento nos permite navegar entre pestañas del JTabbedPane del modulo Inventario
+     * @param evt recibe el evento al dar click
+     * setSelectedIndex seleeciona el numero de pestaña
+     */
     private void btnConsultarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConsultarActionPerformed
      
         jtpInventario.setSelectedIndex(0);
@@ -786,45 +888,65 @@ public class Inventario extends javax.swing.JFrame {
         jtpInventario.setSelectedIndex(1);
     }//GEN-LAST:event_btnIngresarActionPerformed
 
-    private void btnActualizar1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnActualizar1ActionPerformed
-        System.exit(0);
-    }//GEN-LAST:event_btnActualizar1ActionPerformed
+    private void btnRegresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegresarActionPerformed
+        this.dispose();
+        MenuPrincipal mp = new MenuPrincipal ();
+        mp.setVisible(true);
+    }//GEN-LAST:event_btnRegresarActionPerformed
 
     private void btnCancelarConsultarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarConsultarActionPerformed
-        // TODO add your handling code here:
+    jdtFechaInicioConsultar.setDate(null);
+    jdtFechaFinConsultar.setDate(null);
+    txtCodigoConsulta.setText("");
+    txtEanConsulta.setText("");
+    
     }//GEN-LAST:event_btnCancelarConsultarActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-   
-    private void ajustarImagen(JLabel lbl,String ruta )
-    {
-        this.imagen= new ImageIcon(ruta);
-        this.icono = new ImageIcon(this.imagen.getImage().getScaledInstance(
-                lbl.getWidth(),
-                lbl.getHeight(),
-                Image.SCALE_DEFAULT)
-        );
-        lbl.setIcon(this.icono);
-        this.repaint();
-    }
-    
-    private void ajustarImagenBtn(JButton btn,String ruta )
-    {
-        this.imagenLupa= new ImageIcon(ruta);
-        this.iconoLupa = new ImageIcon(this.imagenLupa.getImage().getScaledInstance(
-                btn.getWidth(),
-                btn.getHeight(),
-                Image.SCALE_DEFAULT)
-        );
-        btn.setIcon(this.iconoLupa);
-        this.repaint();
-    }
+    private void txtCodigoConsultaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtCodigoConsultaKeyPressed
+        if (evt.getExtendedKeyCode()== KeyEvent.VK_ENTER){
+            btnOkConsultar.doClick();
+        }
+    }//GEN-LAST:event_txtCodigoConsultaKeyPressed
+
+    private void txtEanConsultaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtEanConsultaKeyPressed
+        if (evt.getExtendedKeyCode()== KeyEvent.VK_ENTER){
+            btnOkConsultar.doClick();
+        }
+    }//GEN-LAST:event_txtEanConsultaKeyPressed
+
+    private void txtCodigoActualizar2KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtCodigoActualizar2KeyPressed
+         if (evt.getExtendedKeyCode()== KeyEvent.VK_ENTER){
+                    
+                 if (!txtCodigoActualizar2.getText().isEmpty()) { //verdadero si esta lleno
+           //ejecutar sp codigo
+           
+                  try{
+                 Connection con = Conexion.getConexion();
+                 CallableStatement sp = con.prepareCall("{call CONSULTAR_STOCK_CODIGO(?)}");
+                 sp.setString(1,txtCodigoActualizar2.getText());
+                    ResultSet rsCodigo = sp.executeQuery();
+                    jtActualizar.setModel(modeloTablaConsulta(rsCodigo));
+//                    txtCodigoActualizar2.setText(rsCodigo.getString(0));
+//                    txtDescripcionActualizar.setText(rsCodigo.getString(1));
+                    ajustarAnchoColumna (jtActualizar);
+                    jtActualizar.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                 sp.close(); 
+                 con.close();
+                    } catch (SQLException e){
+                     JOptionPane.showMessageDialog(null,"error de consulta"+e.toString());
+                        }
+                  
+        } else if (!txtEanConsulta.getText().isEmpty()) {//verdadero si esta lleno
+            
+            JOptionPane.showMessageDialog(null,"INGRESE CODIGO CORRECTO");
+            
+            } 
+        }
+    }//GEN-LAST:event_txtCodigoActualizar2KeyPressed
+ 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel bckModuloInv;
     private javax.swing.JButton btnActualizar;
-    private javax.swing.JButton btnActualizar1;
     private javax.swing.JButton btnBuscarActualizar;
     private javax.swing.JButton btnCancelarActualizar;
     private javax.swing.JButton btnCancelarConsultar;
@@ -835,25 +957,24 @@ public class Inventario extends javax.swing.JFrame {
     private javax.swing.JButton btnModificarActualizar;
     private javax.swing.JButton btnOkConsultar;
     private javax.swing.JButton btnOkRegistros;
+    private javax.swing.JButton btnRegresar;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JComboBox<String> jcbBuscarPorConsultar;
+    private com.toedter.calendar.JDateChooser jdtFechaFinConsultar;
+    private com.toedter.calendar.JDateChooser jdtFechaInicioConsultar;
     private javax.swing.JTable jtActualizar;
     private javax.swing.JTable jtConsultar;
     private javax.swing.JTable jtRegistros;
     private javax.swing.JTabbedPane jtpInventario;
-    private javax.swing.JLabel lblBuscarPorConsultar;
     private javax.swing.JLabel lblCantidadActualActualizar;
     private javax.swing.JLabel lblCantidadReconteoActualizar;
     private javax.swing.JLabel lblCantidadRegistros;
-    private javax.swing.JLabel lblCategoriaActualizar;
     private javax.swing.JLabel lblCategoriaRegistros;
     private javax.swing.JLabel lblCodigoActualizar;
     private javax.swing.JLabel lblCodigoConsultar;
     private javax.swing.JLabel lblCodigoRegistros;
     private javax.swing.JLabel lblDescripcionActualizar;
-    private javax.swing.JLabel lblDescripcionConsultar;
     private javax.swing.JLabel lblDescripcionRegistros;
     private javax.swing.JLabel lblEanActualizar;
     private javax.swing.JLabel lblEanConsultar;
@@ -874,19 +995,17 @@ public class Inventario extends javax.swing.JFrame {
     private javax.swing.JPanel pnlConsultar;
     private javax.swing.JPanel pnlDatos;
     private javax.swing.JPanel pnlRegistros;
-    private javax.swing.JTextField tctEanConsulta;
     private javax.swing.JTextField txtCantidadRegistros;
     private javax.swing.JTextField txtCategoriaRegistros;
-    private javax.swing.JTextField txtCodigoActualizar;
-    private javax.swing.JTextField txtCodigoActualizar1;
     private javax.swing.JTextField txtCodigoActualizar2;
-    private javax.swing.JTextField txtCodigoActualizar3;
     private javax.swing.JTextField txtCodigoActualizar4;
     private javax.swing.JTextField txtCodigoActualizar5;
     private javax.swing.JTextField txtCodigoConsulta;
     private javax.swing.JTextField txtCodigoRegistros;
-    private javax.swing.JTextField txtDescripcionConsultar;
+    private javax.swing.JTextField txtDescripcionActualizar;
     private javax.swing.JTextField txtDescripcionRegistros;
+    private javax.swing.JTextField txtEanActualizar;
+    private javax.swing.JTextField txtEanConsulta;
     private javax.swing.JTextField txtEanRegistros;
     // End of variables declaration//GEN-END:variables
 }
